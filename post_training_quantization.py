@@ -2,7 +2,10 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
+from faced_model import FacedModel
 import os
+import numpy as np
+import time
 
  
 class ImageToTensor:
@@ -12,34 +15,39 @@ class ImageToTensor:
 
 # POST TRAINING QUANTIZATION
 
-PATH_TO_MODEL_FLOAT = ''
-PATH_TO_DATA = ''
+PATH_TO_MODEL_FLOAT = 'models'
+PATH_TO_DATA = 'callibration_images'
 
 image_size = (320, 320)
 batch_size = 1
-num_calibration_batches = 5
+num_calibration_batches = 10
 
 transforms = transforms.Compose([transforms.Resize(image_size),
 	                             ImageToTensor()])
 
-dataset = ImageFolder(PATH_TO_DATA)
+dataset = ImageFolder(PATH_TO_DATA, transform=transforms)
 dataloader = DataLoader(dataset, batch_size=batch_size)
 
-model = torch.load(os.path.join(PATH_TO_MODEL_FLOAT, 'model.pt'), map_location='cpu')
+model = FacedModel(5, 2)
 load = torch.load(os.path.join(PATH_TO_MODEL_FLOAT, 'checkpoint.pt'), map_location='cpu')
 model.load_state_dict(load['model_state_dict'])
 model.to('cpu')
 model.eval()
 
 model.fuse_model()
+torch.backends.quantized.engine = 'qnnpack'
 model.qconfig = torch.quantization.get_default_qconfig('qnnpack')
 torch.quantization.prepare(model, inplace=True)
 
 for i, (image, _) in enumerate(dataloader):
-	if i > num_calibration_batches:
+	if i < num_calibration_batches:
+		print(f'Image #{i}')
+		start = time.time()
+		model(image)
+		print('Time passed (s):', time.time() - start)
+		print('===========')
+	else:
 		break
-
-	model(image)
 
 
 torch.quantization.convert(model, inplace=True)

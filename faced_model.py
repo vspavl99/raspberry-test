@@ -54,10 +54,10 @@ class FacedModel(nn.Module):
         self.layer3 = ConvBlock(in_channels=16)
         self.layer4 = ConvBlock(in_channels=32)
         self.layer5 = ConvBlock(in_channels=64)
-        self.layer6 = ConvBlock(in_channels=128)
-        self.layer7 = ConvBlock(in_channels=256, out_channels=320, n_convs=4, max_pool=False)
-        # self.layer7 = self._make_conv_block(in_channels=128, out_channels=192, n_convs=4, max_pool=False)
-        self.layer8 = nn.Conv2d(in_channels=320,
+        #self.layer6 = ConvBlock(in_channels=128)
+        #self.layer7 = ConvBlock(in_channels=256, out_channels=320, n_convs=4, max_pool=False)
+        self.layer7 = ConvBlock(in_channels=128, out_channels=192, n_convs=4, max_pool=False)
+        self.layer8 = nn.Conv2d(in_channels=192,
                                 out_channels=self.B * 5 + self.C,
                                 kernel_size=3,
                                 stride=1,
@@ -77,7 +77,7 @@ class FacedModel(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
         x = self.layer5(x)
-        x = self.layer6(x)
+        # x = self.layer6(x)
         x = self.layer7(x)
         x = self.layer8(x)
         # Output tensor has shape [5 * number of bboxes, number of grid cells, number of grid cells]

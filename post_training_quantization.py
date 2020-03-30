@@ -11,9 +11,11 @@ import sys
 
  
 class ImageToTensor:
- 	def __call__(self, img):
- 		img = np.array(img).transpose((2, 0, 1))
- 		return torch.from_numpy(img)
+	def __call__(self, img):
+		if len(img.size) == 2:
+			img = np.expand_dims(img, axis=2)
+		img = np.array(img).transpose((2, 0, 1))
+		return torch.from_numpy(img)
 
 # POST TRAINING QUANTIZATION
 
@@ -21,9 +23,13 @@ class ImageToTensor:
 def main(task, model_name, img_size, model_params):
 	batch_size = 1
 	num_calibration_batches = 10
-
-	transform = transforms.Compose([transforms.Resize(img_size),
-	                             ImageToTensor()])
+	if task == 'detection':
+		transform = transforms.Compose([transforms.Resize(img_size),
+	                            	 ImageToTensor()])
+	elif task == 'classification':
+		transform = transforms.Compose([transforms.Resize(img_size),
+						transforms.Grayscale(),
+                                                ImageToTensor()])
 
 	dataset = ImageFolder(PATH_TO_DATA, transform=transform)
 	dataloader = DataLoader(dataset, batch_size=batch_size)
@@ -43,19 +49,20 @@ def main(task, model_name, img_size, model_params):
 	model.qconfig = torch.quantization.get_default_qconfig('qnnpack')
 	torch.quantization.prepare(model, inplace=True)
 
-	for i, (image, _) in enumerate(dataloader):
-		if i < num_calibration_batches:
+	with torch.no_grad():
+		for i, (image, _) in enumerate(dataloader, 1):
+			image = torch.tensor(image, dtype=torch.float)
+			image.requires_grad = False
 			print(f'Image #{i}')
 			start = time.time()
 			model(image)
 			print('Time passed (s):', time.time() - start)
 			print('===========')
-		else:
-			break
-
+			if i >= num_callibration_batches:
+				break
 
 	torch.quantization.convert(model, inplace=True)
-	torch.jit.save(torch.jit.script(model), os.path.join(PATH_TO_MODEL_FLOAT, model_name + 'quantized.pt'))
+	torch.jit.save(torch.jit.script(model), os.path.join(PATH_TO_MODEL, model_name[:-3] + 'quantized.pt'))
 
 
 if __name__ == '__main__':

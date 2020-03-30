@@ -57,11 +57,12 @@ while cap.isOpened():  # Capturing video
 
     # Image preprocessing for format and shape required by model
     image = cv2.resize(image, IMG_SIZE)
-    image_t = torch.from_numpy(image.transpose((2, 0, 1)))
-    image_t = image_t.unsqueeze(0)
-    output = model(image_t)  # Prediction
-    x, y, z = get_most_confident_bbox(output, 2)
-    pred = transform_bbox_coords(output, x, y, z, IMG_SIZE, GRID_SIZE)
+    with torch.no_grad():
+        image_t = torch.from_numpy(image.transpose((2, 0, 1)))
+        image_t = image_t.unsqueeze(0)
+        output = model(image_t)  # Prediction
+        x, y, z = get_most_confident_bbox(output, 2)
+        pred = transform_bbox_coords(output, x, y, z, IMG_SIZE, GRID_SIZE)
     pred = xywh2xyxy(pred)
 
     fps = 1. / (time.time() - start)

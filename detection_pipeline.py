@@ -39,7 +39,8 @@ def xywh2xyxy(coords):
 
 
 # Initialising detection model
-PATH_TO_MODEL = 'models'
+#PATH_TO_MODEL = 'log/detection/faced_model_lite'
+PATH_TO_MODEL = 'models/'
 IMG_SIZE = (288, 288)
 GRID_SIZE = 9
 
@@ -60,6 +61,7 @@ while cap.isOpened():  # Capturing video
         image_t = image_t.unsqueeze(0)
         output = model(image_t)  # Prediction
         x, y, z = get_most_confident_bbox(output, 2)
+        print(output[0, z + 4, x, y])
         pred = transform_bbox_coords(output, x, y, z, IMG_SIZE, GRID_SIZE)
     pred = xywh2xyxy(pred)
 

@@ -39,7 +39,6 @@ def xywh2xyxy(coords):
 
 
 PATH_TO_DETECTION_MODEL = os.path.join('log/detection/faced_model_lite')
-
 PATH_TO_CLASSIFICATION_MODEL = os.path.join('log/classification/mini_xception')
 DETECTION_SHAPE = (288, 288)
 DETECTION_THRESHOLD = 0.4
@@ -52,8 +51,6 @@ torch.backends.quantized.engine = 'qnnpack'
 detection_model = torch.jit.load(os.path.join(PATH_TO_DETECTION_MODEL, 'model_quantized.pt'))
 detection_model.to('cpu').eval()
 
-
-torch.backends.quantized.engine = 'qnnpack'
 classification_model = torch.jit.load(os.path.join(PATH_TO_CLASSIFICATION_MODEL, 'model_quantized.pt'))
 classification_model.to('cpu').eval()
 
@@ -62,18 +59,19 @@ cap = cv2.VideoCapture(0)
 # Start video capturing
 while cap.isOpened():
     ret, image = cap.read()  # original image
-    orig_shape = image.shape[:2]  # (480, 640)
+    orig_shape = image.shape[:2]  # (H, W)
     start = time.time()
 
     with torch.no_grad():
-        detection_image = torch.from_numpy(image.transpose((2, 0, 1)))
+        detection_image = cv2.resize(image, DETECTION_SHAPE)
+        detection_image = torch.from_numpy(detection_image.transpose((2, 0, 1)))
         detection_image = detection_image.unsqueeze(0)
         output = detection_model(detection_image)  # Prediction
         x, y, z = get_most_confident_bbox(output, 2)
         pred_xywh = transform_bbox_coords(output, x, y, z, DETECTION_SHAPE, GRID_SIZE)
         pred_xyxy = xywh2xyxy(pred_xywh)
 
-        if output[0, x, y, z + 4].item() > DETECTION_THRESHOLD:  # prediction confidence threshold
+        if output[0, z + 4, x, y].item() > DETECTION_THRESHOLD:  # prediction confidence threshold
 
             bbox_l_y = int((pred_xyxy[1]) * (orig_shape[0] / DETECTION_SHAPE[1]))  # Transform bbox coords
             bbox_r_y = int((pred_xyxy[3]) * (orig_shape[0] / DETECTION_SHAPE[1]))  # correspondingly to DETECTION_SHAPE -> orig_shape
@@ -106,15 +104,16 @@ while cap.isOpened():
                                 pred_emo,
                                 (bbox_l_x, bbox_l_y + 10),
                                 cv2.FONT_HERSHEY_SIMPLEX,
-                                color=(0, 255, 0),
-                                fontScale=0.3,
+                                color=(0, 0, 255),
+                                fontScale=0.5,
                                 thickness=2)
 
-            cv2.imshow('classification pipeline', image)
+            fps = 1. / (time.time() - start)  # Count fps
+            image = cv2.putText(image,'FPS: ' + str(fps), (20, 20), cv2.FONT_HERSHEY_SIMPLEX, color=(255, 255, 0), fontScale=0.5, thickness=2)
+
+            cv2.imshow('image', image)
         else:
             cv2.imshow('image', image)
-        fps = 1. / (time.time() - start)  # Count fps
-        print(fps)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

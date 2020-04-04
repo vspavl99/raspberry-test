@@ -2,8 +2,6 @@ import cv2
 import torch
 import numpy as np
 import os
-#from utils.utils import xywh2xyxy, from_yolo_target
-#from data.detection.show_targets import show_rectangles
 import time
 
 

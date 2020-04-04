@@ -1,5 +1,6 @@
 ./DS_Store
 __pycache__/
+.idea/
 tesst.py
 model/.DS_Store
 callibration_images/.DS_Store

@@ -65,10 +65,10 @@ def run_eval():
                 image = cv2.rectangle(image, (bbox_l_x, bbox_l_y), (bbox_r_x, bbox_r_y), color=(0, 255, 0), thickness=2)
                 image = cv2.putText(image,
                                     pred_emo,
-                                    (bbox_l_x, bbox_l_y + 10),
+                                    (bbox_l_x, bbox_l_y - 10),
                                     cv2.FONT_HERSHEY_SIMPLEX,
                                     color=(0, 0, 255),
-                                    fontScale=0.5,
+                                    fontScale=1.1,
                                     thickness=2)
 
                 fps = 1. / (time.time() - start)  # Count fps

@@ -109,7 +109,7 @@ while cap.isOpened():
                                 thickness=2)
 
             fps = 1. / (time.time() - start)  # Count fps
-            image = cv2.putText(image,'FPS: ' + str(fps), (20, 20), cv2.FONT_HERSHEY_SIMPLEX, color=(255, 255, 0), fontScale=0.5, thickness=2)
+            #image = cv2.putText(image,'FPS: ' + str(fps), (20, 20), cv2.FONT_HERSHEY_SIMPLEX, color=(255, 255, 0), fontScale=0.5, thickness=2)
 
             cv2.imshow('image', image)
         else:
